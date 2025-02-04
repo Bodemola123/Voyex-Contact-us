@@ -4,8 +4,9 @@ import emailjs from "emailjs-com";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";  // Import toast
-import "react-toastify/dist/ReactToastify.css";  // Import toast styles
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { debounce } from 'lodash';
 import '../app/globals.css';
 
 const ContactUs = () => {
@@ -19,86 +20,103 @@ const ContactUs = () => {
     email: "",
     phone: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const HUNTER_API_KEY = process.env.NEXT_PUBLIC_HUNTER_API_KEY;
+  const NUMVERIFY_API_KEY = process.env.NEXT_PUBLIC_NUMVERIFY_API_KEY;
+  const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+  const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+  const EMAILJS_USER_ID = process.env.NEXT_PUBLIC_EMAILJS_USER_ID;
 
   const validateEmailWithHunter = async (email) => {
     try {
       const response = await axios.get(
-        `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=96038781561cc3023000da4e3dbd7478d113e249`
+        `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=${HUNTER_API_KEY}`
       );
       return response.data.data.result === "deliverable";
     } catch (error) {
       console.error("Hunter API error:", error);
-      return false;
+      toast.error("Email validation service is currently unavailable. Please try again later.");
+      return false; // Email validation fails if API call fails
     }
   };
 
   const validatePhoneWithNumverify = async (phone) => {
     try {
       const response = await axios.get(
-        `https://apilayer.net/api/validate?access_key=1e3a2d374e61f3758734566f41c32b0e&number=${phone}`
+        `https://apilayer.net/api/validate?access_key=${NUMVERIFY_API_KEY}&number=${phone}`
       );
       return response.data.valid;
     } catch (error) {
       console.error("Numverify API error:", error);
-      return false;
+      toast.error("Phone validation service is currently unavailable. Please try again later.");
+      return false; // Phone validation fails if API call fails
     }
   };
+
+  const debouncedValidateEmail = debounce(async (email) => {
+    const isValidEmail = await validateEmailWithHunter(email);
+    setErrors((prevErrors) => ({ ...prevErrors, email: isValidEmail ? "" : "Invalid email address" }));
+  }, 500);
+
+  const debouncedValidatePhone = debounce(async (phone) => {
+    const isValidPhone = await validatePhoneWithNumverify(phone);
+    setErrors((prevErrors) => ({ ...prevErrors, phone: isValidPhone ? "" : "Invalid phone number" }));
+  }, 500);
 
   const handleInputChange = async (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
     if (name === "email") {
-      const isValidEmail = await validateEmailWithHunter(value);
-      setErrors({ ...errors, email: isValidEmail ? "" : "Invalid email address" });
+      debouncedValidateEmail(value);
     }
   };
 
   const handlePhoneChange = async (value) => {
     setFormData({ ...formData, phone: value });
-    const isValidPhone = await validatePhoneWithNumverify(value);
-    setErrors({ ...errors, phone: isValidPhone ? "" : "Invalid phone number" });
+    debouncedValidatePhone(value);
   };
 
-  const sendEmail = (e) => {
+  const sendEmail = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast.error("Please fill in all fields.");
+      setIsSubmitting(false);
       return;
     }
 
     if (errors.email || errors.phone) {
       toast.error("Please fix validation errors before submitting.");
+      setIsSubmitting(false);
       return;
     }
 
-    emailjs
-      .send(
-        "service_dvvrehq",
-        "template_u4pl4cr",
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
         {
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
         },
-        "mgQO4sunPaUIhxonx"
-      )
-      .then(
-        (result) => {
-          toast.success("Message sent successfully!");
-          setFormData({ firstName: "", lastName: "", email: "", phone: "" });
-        },
-        (error) => {
-          toast.error("Failed to send message. Please try again.");
-        }
+        EMAILJS_USER_ID
       );
+      toast.success("Message sent successfully!");
+      setFormData({ firstName: "", lastName: "", email: "", phone: "" });
+    } catch (error) {
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen text-white flex flex-col md:flex-row items-center justify-center p-6">
-      {/* Form Section */}
       <ToastContainer/>
       <div className="w-full max-w-lg bg-[#131314] p-6 rounded-xl shadow-2xl border border-[#3a3a3a]">
         <h1 className="text-3xl text-center font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#c088fb] to-[#6d28d9]">
@@ -156,6 +174,9 @@ const ContactUs = () => {
                 country={"us"}
                 value={formData.phone}
                 onChange={handlePhoneChange}
+                inputProps={{
+                  "aria-label": "Phone Number",
+                }}
                 inputStyle={{
                   width: "100%",
                   paddingLeft: "50px",
@@ -170,14 +191,13 @@ const ContactUs = () => {
                   backgroundColor: "#0a0a0b",
                   color: "white",
                   border: "1px solid #4a4a4a",
-                  scrollbarWidth: "none", // Hides scrollbar in Firefox
-                  msOverflowStyle: "none", // Hides scrollbar in IE/Edge
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
                   position: "absolute",
                   bottom: "100%",
                   zIndex: 9999,
                 }}
-                dropdownClass="iti__country-list" // Apply custom styles from globals.css
-
+                dropdownClass="iti__country-list"
                 buttonStyle={{
                   backgroundColor: "0a0a0b",
                   border: "1px solid #4a4a4a",
@@ -194,13 +214,13 @@ const ContactUs = () => {
           <button
             type="submit"
             className="w-full p-2 rounded-lg bg-gradient-to-r from-[#c088fb] to-[#6d28d9] text-white font-bold hover:from-[#6d28d9] hover:to-[#c088fb] transition-all"
+            disabled={isSubmitting}
           >
-            Send Message
+            {isSubmitting ? "Sending..." : "Send Message"}
           </button>
         </form>
       </div>
 
-      {/* Map Section */}
       <div className="w-full max-w-2xl mt-8 md:mt-0 md:ml-8 h-80 md:h-96">
         <iframe
           title="Google Map"
@@ -213,9 +233,6 @@ const ContactUs = () => {
           loading="lazy"
         ></iframe>
       </div>
-
-      {/* Toast container */}
-
     </div>
   );
 };
