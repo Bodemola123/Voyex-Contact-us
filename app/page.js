@@ -35,7 +35,7 @@ const ContactUs = () => {
   const validatePhoneWithNumverify = async (phone) => {
     try {
       const response = await axios.get(
-        `http://apilayer.net/api/validate?access_key=1e3a2d374e61f3758734566f41c32b0e&number=${phone}`
+        `https://apilayer.net/api/validate?access_key=1e3a2d374e61f3758734566f41c32b0e&number=${phone}`
       );
       return response.data.valid;
     } catch (error) {
