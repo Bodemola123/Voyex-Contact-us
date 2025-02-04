@@ -16,65 +16,63 @@ const ContactUs = () => {
     email: "",
     phone: "",
   });
-  const [errors, setErrors] = useState({
-    email: "",
-    phone: "",
-  });
+  const [errors, setErrors] = useState({ email: "", phone: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEmailComplete, setIsEmailComplete] = useState(false);
+  const [isPhoneComplete, setIsPhoneComplete] = useState(false);
 
+  const ABSTRACT_PHONE_API_KEY = process.env.NEXT_PUBLIC_ABSTRACT_PHONE_API_KEY;
   const HUNTER_API_KEY = process.env.NEXT_PUBLIC_HUNTER_API_KEY;
-  const NUMVERIFY_API_KEY = process.env.NEXT_PUBLIC_NUMVERIFY_API_KEY;
   const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
   const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
   const EMAILJS_USER_ID = process.env.NEXT_PUBLIC_EMAILJS_USER_ID;
 
   const validateEmailWithHunter = async (email) => {
     try {
-      const response = await axios.get(
-        `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=${HUNTER_API_KEY}`
-      );
+      const response = await axios.get(`http://api.hunter.io/v2/email-verifier?email=${email}&api_key=${HUNTER_API_KEY}`);
       return response.data.data.result === "deliverable";
     } catch (error) {
       console.error("Hunter API error:", error);
-      toast.error("Email validation service is currently unavailable. Please try again later.");
-      return false; // Email validation fails if API call fails
+      toast.warn("Email validation service unavailable. Proceeding without validation.");
+      return true;
     }
   };
 
-  const validatePhoneWithNumverify = async (phone) => {
+  const validatePhoneWithAbstractAPI = async (phone) => {
     try {
-      const response = await axios.get(
-        `https://apilayer.net/api/validate?access_key=${NUMVERIFY_API_KEY}&number=${phone}`
-      );
+      const response = await axios.get(`https://phonevalidation.abstractapi.com/v1/?api_key=${ABSTRACT_PHONE_API_KEY}&phone=${phone}`);
       return response.data.valid;
     } catch (error) {
-      console.error("Numverify API error:", error);
-      toast.error("Phone validation service is currently unavailable. Please try again later.");
-      return false; // Phone validation fails if API call fails
+      console.error("Abstract API phone validation error:", error);
+      toast.warn("Phone validation service unavailable. Proceeding without validation.");
+      return true;
     }
   };
 
   const debouncedValidateEmail = debounce(async (email) => {
+    if (!isEmailComplete) return;
     const isValidEmail = await validateEmailWithHunter(email);
     setErrors((prevErrors) => ({ ...prevErrors, email: isValidEmail ? "" : "Invalid email address" }));
-  }, 500);
+  }, 8000);
 
   const debouncedValidatePhone = debounce(async (phone) => {
-    const isValidPhone = await validatePhoneWithNumverify(phone);
+    if (!isPhoneComplete) return;
+    const isValidPhone = await validatePhoneWithAbstractAPI(phone);
     setErrors((prevErrors) => ({ ...prevErrors, phone: isValidPhone ? "" : "Invalid phone number" }));
-  }, 500);
+  }, 8000);
 
-  const handleInputChange = async (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-
     if (name === "email") {
+      setIsEmailComplete(value.includes("@") && value.includes("."));
       debouncedValidateEmail(value);
     }
   };
 
-  const handlePhoneChange = async (value) => {
+  const handlePhoneChange = (value) => {
     setFormData({ ...formData, phone: value });
+    setIsPhoneComplete(value.length > 6);
     debouncedValidatePhone(value);
   };
 
