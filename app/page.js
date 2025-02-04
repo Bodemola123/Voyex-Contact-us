@@ -118,7 +118,7 @@ const ContactUs = () => {
   return (
     <div className="min-h-screen text-white flex flex-col md:flex-row items-center justify-center p-6">
       <ToastContainer/>
-      <div className="w-full max-w-lg bg-[#131314] p-6 rounded-xl shadow-2xl border border-[#3a3a3a]">
+      <div className="w-full max-w-lg bg-[#131314] p-6 rounded-3xl shadow-2xl border border-[#3a3a3a]">
         <h1 className="text-3xl text-center font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#c088fb] to-[#6d28d9]">
           Get in Touch
         </h1>
@@ -135,7 +135,7 @@ const ContactUs = () => {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleInputChange}
-                className="w-full p-2 rounded-lg bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
+                className="w-full p-2 rounded-3xl bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
                 required
               />
             </div>
@@ -147,7 +147,7 @@ const ContactUs = () => {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleInputChange}
-                className="w-full p-2 rounded-lg bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
+                className="w-full p-2 rounded-3xl bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
                 required
               />
             </div>
@@ -160,7 +160,7 @@ const ContactUs = () => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full p-2 rounded-lg bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
+              className="w-full p-2 rounded-3xl bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
               required
             />
             {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
@@ -213,7 +213,7 @@ const ContactUs = () => {
 
           <button
             type="submit"
-            className="w-full p-2 rounded-lg bg-gradient-to-r from-[#c088fb] to-[#6d28d9] text-white font-bold hover:from-[#6d28d9] hover:to-[#c088fb] transition-all"
+            className="w-full p-2 rounded-3xl bg-gradient-to-r from-[#c088fb] to-[#6d28d9] text-white font-bold hover:from-[#6d28d9] hover:to-[#c088fb] transition-all"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Sending..." : "Send Message"}
