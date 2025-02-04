@@ -19,3 +19,39 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Custom styles for the PhoneInput dropdown */
+.selected-flag {
+  background-color: #0a0a0a !important;
+}
+
+.selected-flag:focus {
+  background-color: #0a0a0a !important;
+}
+
+.flag-dropdown.open {
+  background: transparent !important;
+}
+
+/* Remove scrollbar for dropdown */
+/* Ensure the dropdown background remains transparent */
+.iti__country-list {
+  background-color: #0a0a0b !important;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar in Chrome, Safari, Opera */
+.iti__country-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove white background on hover & focus for dropdown options */
+li:hover,
+li:focus,
+li:active {
+  background-color: #131314 !important;
+}
+li[aria-selected="true"] {
+  background-color: #171717 !important;
+  color: white !important;
+}

@@ -1,101 +1,223 @@
-import Image from "next/image";
+"use client";
+import React, { useState } from "react";
+import emailjs from "emailjs-com";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";  // Import toast
+import "react-toastify/dist/ReactToastify.css";  // Import toast styles
+import '../app/globals.css';
 
-export default function Home() {
+const ContactUs = () => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+  });
+  const [errors, setErrors] = useState({
+    email: "",
+    phone: "",
+  });
+
+  const validateEmailWithHunter = async (email) => {
+    try {
+      const response = await axios.get(
+        `https://api.hunter.io/v2/email-verifier?email=${email}&api_key=96038781561cc3023000da4e3dbd7478d113e249`
+      );
+      return response.data.data.result === "deliverable";
+    } catch (error) {
+      console.error("Hunter API error:", error);
+      return false;
+    }
+  };
+
+  const validatePhoneWithNumverify = async (phone) => {
+    try {
+      const response = await axios.get(
+        `http://apilayer.net/api/validate?access_key=1e3a2d374e61f3758734566f41c32b0e&number=${phone}`
+      );
+      return response.data.valid;
+    } catch (error) {
+      console.error("Numverify API error:", error);
+      return false;
+    }
+  };
+
+  const handleInputChange = async (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (name === "email") {
+      const isValidEmail = await validateEmailWithHunter(value);
+      setErrors({ ...errors, email: isValidEmail ? "" : "Invalid email address" });
+    }
+  };
+
+  const handlePhoneChange = async (value) => {
+    setFormData({ ...formData, phone: value });
+    const isValidPhone = await validatePhoneWithNumverify(value);
+    setErrors({ ...errors, phone: isValidPhone ? "" : "Invalid phone number" });
+  };
+
+  const sendEmail = (e) => {
+    e.preventDefault();
+
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+
+    if (errors.email || errors.phone) {
+      toast.error("Please fix validation errors before submitting.");
+      return;
+    }
+
+    emailjs
+      .send(
+        "service_dvvrehq",
+        "template_u4pl4cr",
+        {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+        },
+        "mgQO4sunPaUIhxonx"
+      )
+      .then(
+        (result) => {
+          toast.success("Message sent successfully!");
+          setFormData({ firstName: "", lastName: "", email: "", phone: "" });
+        },
+        (error) => {
+          toast.error("Failed to send message. Please try again.");
+        }
+      );
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen text-white flex flex-col md:flex-row items-center justify-center p-6">
+      {/* Form Section */}
+      <ToastContainer/>
+      <div className="w-full max-w-lg bg-[#131314] p-6 rounded-xl shadow-2xl border border-[#3a3a3a]">
+        <h1 className="text-3xl text-center font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#c088fb] to-[#6d28d9]">
+          Get in Touch
+        </h1>
+        <p className="text-gray-300 mb-6 text-center">
+          We will get back to you ASAP!
+        </p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+        <form onSubmit={sendEmail} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">First Name</label>
+              <input
+                type="text"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                className="w-full p-2 rounded-lg bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
+              <input
+                type="text"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                className="w-full p-2 rounded-lg bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full p-2 rounded-lg bg-[#0a0a0b] border border-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#c088fb] text-white"
+              required
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {errors.email && <p className="text-red-400 text-sm mt-1">{errors.email}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Phone Number</label>
+            <div className="relative">
+              <PhoneInput
+                className="custom-phone-input"
+                country={"us"}
+                value={formData.phone}
+                onChange={handlePhoneChange}
+                inputStyle={{
+                  width: "100%",
+                  paddingLeft: "50px",
+                  borderRadius: "24px",
+                  backgroundColor: "#0a0a0b",
+                  border: "1px solid #4a4a4a",
+                  color: "white",
+                  outline: "none",
+                  transition: "none",
+                }}
+                dropdownStyle={{
+                  backgroundColor: "#0a0a0b",
+                  color: "white",
+                  border: "1px solid #4a4a4a",
+                  scrollbarWidth: "none", // Hides scrollbar in Firefox
+                  msOverflowStyle: "none", // Hides scrollbar in IE/Edge
+                  position: "absolute",
+                  bottom: "100%",
+                  zIndex: 9999,
+                }}
+                dropdownClass="iti__country-list" // Apply custom styles from globals.css
+
+                buttonStyle={{
+                  backgroundColor: "0a0a0b",
+                  border: "1px solid #4a4a4a",
+                  color: "white",
+                  outline: "none",
+                  transition: "none",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+            {errors.phone && <p className="text-red-400 text-sm mt-1">{errors.phone}</p>}
+          </div>
+
+          <button
+            type="submit"
+            className="w-full p-2 rounded-lg bg-gradient-to-r from-[#c088fb] to-[#6d28d9] text-white font-bold hover:from-[#6d28d9] hover:to-[#c088fb] transition-all"
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            Send Message
+          </button>
+        </form>
+      </div>
+
+      {/* Map Section */}
+      <div className="w-full max-w-2xl mt-8 md:mt-0 md:ml-8 h-80 md:h-96">
+        <iframe
+          title="Google Map"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3151.8354345091843!2d144.9537353153175!3d-37.81627917975126!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6ad642af0f11fd81%3A0xf0727dbd1d67a29!2sMelbourne%20VIC%2C%20Australia!5e0!3m2!1sen!2sus!4v1615932201105!5m2!1sen!2sus"
+          width="100%"
+          height="100%"
+          className="rounded-xl shadow-2xl border border-[#3a3a3a]"
+          style={{ border: 0 }}
+          allowFullScreen="true"
+          loading="lazy"
+        ></iframe>
+      </div>
+
+      {/* Toast container */}
+
     </div>
   );
-}
+};
+
+export default ContactUs;
