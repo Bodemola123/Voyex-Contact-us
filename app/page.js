@@ -38,14 +38,16 @@ const ContactUs = () => {
     }
   };
 
-  const validatePhoneWithAbstractAPI = async (phone) => {
+  const validatePhoneWithNumverify = async (phone) => {
     try {
-      const response = await axios.get(`https://phonevalidation.abstractapi.com/v1/?api_key=${ABSTRACT_PHONE_API_KEY}&phone=${phone}`);
+      const response = await axios.get(
+        `https://apilayer.net/api/validate?access_key=${NUMVERIFY_API_KEY}&number=${phone}`
+      );
       return response.data.valid;
     } catch (error) {
-      console.error("Abstract API phone validation error:", error);
-      toast.warn("Phone validation service unavailable. Proceeding without validation.");
-      return true;
+      console.error("Numverify API error:", error);
+      toast.error("Phone validation service is currently unavailable. Please try again later.");
+      return false; // Phone validation fails if API call fails
     }
   };
 
